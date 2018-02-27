@@ -23,13 +23,9 @@
 void clear_Buf(void);
 void delay_time(void);
 int JudgeStringCmp(const char *strLong, const char *strShort);
-#define Buf1_Max 60 					  //串口1缓存长度
-#define Buf2_Max 200 					  //串口2缓存长度
-char Number2Uart2_Bufing[50][2] = {"1","2","3","4","5","6","7","8","9","10",\
-	"11","12","13","14","15","16","17","18","19","20",\
-	"21","22","23","24","25","26","27","28","29","30",\
-	"31","32","33","34","35","36","37","38","39","40",\
-	"41","42","43","44","45","46","47","48","49","50"};
+void String2Num(char *str,char *zj_num);
+void Send_Gsm_Cmd(char * str);
+
 /*************  本地变量声明	**************/
 char Uart2_Buf[100];//串口2接收缓存
 
@@ -39,7 +35,7 @@ vu8 Timer0_start;	//定时器0延时启动计数器
 vu8 Uart2_Start;	//串口2开始接收数据
 vu8 Uart2_End;	  //串口2接收数据结束
 extern u8 GSM_Config_Flag;
-extern u8 GSM_Tx_Counter;
+extern volatile u8 GSM_Tx_Counter;
 u8 Step_Flag = 0;
 /**
   * @brief  主函数
@@ -52,86 +48,129 @@ int main(void)
 //USART1_TX --- TXD
 //USART1_RX --- RXD
 	u8 i = 0;
+	u8 zj_cnt = 0;
+	char buff[2];
   /*初始化USART 配置模式为 115200 8-N-1，中断接收*/
   USART_Config();
 	/* 配置SysTick 为10us中断一次 */
 	SysTick_Init();	
 //检测SIM卡是否注册成功
-	while(1)
+	while(0xA5 == GSM_Config_Flag)
 	{
-		if(0xA5 == GSM_Config_Flag)
-		{
-			Usart_SendString( DEBUG_USARTx,"AT+CREG?");
-			Usart_SendString( DEBUG_USARTx,"\r\n");
+			Send_Gsm_Cmd("AT+CREG?");
 			Delay_us(10000);					
-		}
-		else
-		{
-			//注册成功
-			break;
-		}
 	}	
 	GSM_Config_Flag = 0xA5;
 	clear_Buf();
-	GSM_Tx_Counter = 0;
 //取消回显	
 	while(0xA5 == GSM_Config_Flag)
 	{
-
-		Usart_SendString(DEBUG_USARTx,"ATE0");
-		Usart_SendString( DEBUG_USARTx,"\r\n");
+		Send_Gsm_Cmd("ATE0");
 		Delay_us(10000);	
 	}
 	GSM_Config_Flag = 0xA5;
 	clear_Buf();
-	GSM_Tx_Counter = 0;
 	while(0xA5 == GSM_Config_Flag)
 	{
-		Usart_SendString(DEBUG_USARTx,"AT+CMGF=1");
-		Usart_SendString( DEBUG_USARTx,"\r\n");
+		Send_Gsm_Cmd("AT+CMGF=1");
 		Delay_us(10000);	
 	}
 	GSM_Config_Flag = 0xA5;
 	clear_Buf();
-	GSM_Tx_Counter = 0;
-  while(1)
-	{	
+	while(1)
+	{
+		Delay_us(100000);
+		//接收到短信		
 		if(JudgeStringCmp("+CMT",Uart2_Buf))
 		{
-			//接收到短信
-			for(i = 0;i < 50;i++)
-			{
-				if(JudgeStringCmp(Number2Uart2_Bufing[i],Uart2_Buf))
-				{
-					//确定是第几条短信
+					String2Num(Uart2_Buf,buff);
 					clear_Buf();
-					GSM_Tx_Counter = 0;
+					GSM_Config_Flag = 0xA5;
 					while(0xA5 == GSM_Config_Flag)
 					{
 						//通过指令获取短信内容
 						Usart_SendString(DEBUG_USARTx,"AT+CMGR=");
-						Usart_SendString(DEBUG_USARTx,Number2Uart2_Bufing[i]);
-//						Usart_SendString(DEBUG_USARTx,"13");
+						Usart_SendString(DEBUG_USARTx,buff);
 						Usart_SendString(DEBUG_USARTx,"\r\n");
 						Delay_us(10000);				
 					}
-					if(JudgeStringCmp("14356556651",Uart2_Buf))
+					if(JudgeStringCmp("15665565341",Uart2_Buf))
 					{
-						if(JudgeStringCmp("nepo",Uart2_Buf))
+						if(JudgeStringCmp("open",Uart2_Buf))
 						{
-							i = 100;
 							//打开家电
+							//回显成功短信
+							GSM_Config_Flag = 0xA5;
+							clear_Buf();
+							while(0xA5 == GSM_Config_Flag)
+							{
+								Usart_SendString(DEBUG_USARTx,"AT+CSCA=\"+8613010314500\"");
+								Usart_SendString( DEBUG_USARTx,"\r\n");
+								Delay_us(10000);	
+							}
+							clear_Buf();
+							while(1)
+							{
+								Usart_SendString(DEBUG_USARTx,"AT+CMGS=\"15665565341\"");
+								Usart_SendString( DEBUG_USARTx,"\r\n");
+								Delay_us(10000);	
+								if(JudgeStringCmp(">",Uart2_Buf))
+								{
+									break;
+								}									
+							}
+							GSM_Config_Flag = 0xA5;
+							while(0xA5 == GSM_Config_Flag)
+							{
+								Usart_SendString(DEBUG_USARTx,"open successed");						
+								Usart_SendByte(DEBUG_USARTx,0x1A);
+								Usart_SendString(DEBUG_USARTx,"\r\n");
+								Delay_us(1000000);
+								if(JudgeStringCmp("+CMGS",Uart2_Buf))
+								{
+									GSM_Config_Flag = 0xA5;
+									break;
+								}
+							}						
 						}
-						else if(JudgeStringCmp("esolc",Uart2_Buf))
+						else if(JudgeStringCmp("close",Uart2_Buf))
 						{
-							i = 101;
 							//关闭家电
+							//回显成功短信
+							GSM_Config_Flag = 0xA5;
+							clear_Buf();
+							while(0xA5 == GSM_Config_Flag)
+							{
+								Usart_SendString(DEBUG_USARTx,"AT+CSCA=\"+8613010314500\"");
+								Usart_SendString( DEBUG_USARTx,"\r\n");
+								Delay_us(10000);	
+							}
+							clear_Buf();
+							while(1)
+							{
+								Usart_SendString(DEBUG_USARTx,"AT+CMGS=\"15665565341\"");
+								Usart_SendString( DEBUG_USARTx,"\r\n");
+								Delay_us(10000);	
+								if(JudgeStringCmp(">",Uart2_Buf))
+								{
+									break;
+								}									
+							}
+							GSM_Config_Flag = 0xA5;
+							while(0xA5 == GSM_Config_Flag)
+							{
+								Usart_SendString(DEBUG_USARTx,"close successed");						
+								Usart_SendByte(DEBUG_USARTx,0x1A);
+								Usart_SendString(DEBUG_USARTx,"\r\n");
+								Delay_us(1000000);
+								if(JudgeStringCmp("+CMGS",Uart2_Buf))
+								{
+									GSM_Config_Flag = 0xA5;
+									break;
+								}
+							}
 						}
-					}
-					break;
-				} 
-				
-			}		
+					}		
 		}				
 	}
 
@@ -153,6 +192,7 @@ void clear_Buf(void)
 	{
 		Uart2_Buf[i] = 0x00;		
 	}
+	GSM_Tx_Counter = 0;
 }
 
 
@@ -182,6 +222,31 @@ int JudgeStringCmp(const char *str2, const char *str1)
 	return 0;
 }
 
+void String2Num(char *str,char *zj_num)
+{
+	int num = 0;
+	int i = 0;
+	while(str[i] != '\0')
+	{ 
+		if (('0' <= str[i]) && (str[i] <= '9'))
+		{
+			*zj_num = str[i];
+			zj_num++;
+		}
+		else
+		{
+			if (('0' <= str[i - 1]) && (str[i - 1] <= '9'))
+			{
+				break;
+			}
+		}
+		i++;
+	}
+}
 
-
+void Send_Gsm_Cmd(char * str)
+{
+	Usart_SendString(DEBUG_USARTx,str);
+	Usart_SendString( DEBUG_USARTx,"\r\n");
+}
 

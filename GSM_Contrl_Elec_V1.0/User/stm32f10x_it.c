@@ -49,7 +49,7 @@
   */
 	
 u8 GSM_Config_Flag = 0xA5;
-u8 GSM_Tx_Counter = 0;
+volatile u8 GSM_Tx_Counter = 0;
 extern char Uart2_Buf[50];
 void NMI_Handler(void)
 {

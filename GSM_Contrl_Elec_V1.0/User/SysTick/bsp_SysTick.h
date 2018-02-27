@@ -9,6 +9,6 @@ void Delay_us(__IO u32 nTime);
 
 void SysTick_Delay_Us( __IO uint32_t us);
 void SysTick_Delay_Ms( __IO uint32_t ms);
-
+void TimingDelay_Decrement(void);
 
 #endif /* __SYSTICK_H */
