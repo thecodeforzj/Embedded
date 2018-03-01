@@ -19,6 +19,7 @@
 #include "stm32f10x.h"
 #include "bsp_usart.h"
 #include "bsp_SysTick.h"
+#include "bsp_led.h" 
 
 void clear_Buf(void);
 void delay_time(void);
@@ -47,13 +48,16 @@ int main(void)
 //深蓝是PA9
 //USART1_TX --- TXD
 //USART1_RX --- RXD
-	u8 i = 0;
-	u8 zj_cnt = 0;
+
 	char buff[2];
   /*初始化USART 配置模式为 115200 8-N-1，中断接收*/
   USART_Config();
 	/* 配置SysTick 为10us中断一次 */
 	SysTick_Init();	
+	
+	/*初始化led等的引脚*/
+	LED_GPIO_Config();
+	
 //检测SIM卡是否注册成功
 	while(0xA5 == GSM_Config_Flag)
 	{
@@ -131,7 +135,10 @@ int main(void)
 									GSM_Config_Flag = 0xA5;
 									break;
 								}
-							}						
+							}
+							GPIO_ResetBits(LED1_GPIO_PORT, LED1_GPIO_PIN);
+							Delay_us(30000);
+							GPIO_SetBits(LED1_GPIO_PORT, LED1_GPIO_PIN);							
 						}
 						else if(JudgeStringCmp("close",Uart2_Buf))
 						{
@@ -169,6 +176,9 @@ int main(void)
 									break;
 								}
 							}
+							GPIO_ResetBits(LED2_GPIO_PORT, LED2_GPIO_PIN);
+							Delay_us(30000);
+							GPIO_SetBits(LED2_GPIO_PORT, LED2_GPIO_PIN);
 						}
 					}		
 		}				
@@ -224,7 +234,6 @@ int JudgeStringCmp(const char *str2, const char *str1)
 
 void String2Num(char *str,char *zj_num)
 {
-	int num = 0;
 	int i = 0;
 	while(str[i] != '\0')
 	{ 

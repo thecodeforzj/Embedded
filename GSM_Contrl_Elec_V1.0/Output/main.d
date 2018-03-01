@@ -12,3 +12,4 @@
 ..\..\output\main.o: ..\..\User\usart\bsp_usart.h
 ..\..\output\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 ..\..\output\main.o: ..\..\User\SysTick\bsp_SysTick.h
+..\..\output\main.o: ..\..\User\led\bsp_led.h
