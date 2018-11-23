@@ -1,6 +1,6 @@
 
 // ADT_Stack.cpp : 定义控制台应用程序的入口点。
-/*栈实现*/
+//栈实现
 
 #include "stdafx.h"
 #include<stdio.h>
@@ -49,7 +49,7 @@ void ReMallocMemory(SqList *l)
 			l->base++;
 		}
 		free(delete_base);
-		l->top = temp_base - 1;
+		l->top = temp_base;
 		l->base = new_temp_base;
 		l->listsize = l->listsize + LISTINCREMENT;
 	}
@@ -71,6 +71,74 @@ void AddDataToListSql(SqList *l, ElemType num)
 
 }
 
+void Clear_Stack(SqList *l)
+{
+	if (l->top == l->base)
+	{
+		printf("空栈");
+	}
+	else
+	{
+		free(l->base);
+		printf("栈释放成功");
+	}
+}
+
+bool Stack_Empty(SqList *l)
+{
+	if (l->top == l->base)
+	{
+		printf("空栈");
+		return false;
+	}
+	else
+	{
+		free(l->base);
+		printf("栈释放成功");
+		return true;
+	}
+}
+
+int Stack_Length(SqList *l)
+{
+	int num;
+	num = l->top - l->base;
+	return num;
+}
+
+int Get_Top(SqList l,int *temp)
+{
+	int num;
+	if (l.top == l.base)
+	{
+		printf("空栈~~~");
+		return 0;
+	}
+	else
+	{
+		num = *(l.top - 1);
+		return 1;
+	}
+
+
+}
+
+int Pop(SqList *l,int *temp)
+{
+	int num;
+	if (l->base == l->top)
+	{
+		printf("栈空了");
+		return 0;
+	}
+	else
+	{
+		num = *(l->top - 1);
+		l->top--;
+		return 1;
+	}
+}
+
 int main()
 {
 	int i, num;
@@ -80,14 +148,13 @@ int main()
 	ElemType  *show_base_arr;
 	if (1 == num)
 	{
-		for (i = 0; i < 20; i++)
+		for (i = 0; i < 1; i++)
 		{
 			AddDataToListSql(&l, i);
 		}
 		show_base_arr = l.base;
 		show_top_arr = l.top;
 		num = l.top - l.base;
-
 		for (i = 0; i < num; i++)
 		{
 			std::cout << *show_base_arr << std::endl;
@@ -101,6 +168,7 @@ int main()
 			std::cout << *(show_top_arr - 1) << std::endl;
 			show_top_arr--;
 		}
+		Clear_Stack(&l);
 	}
 
 
